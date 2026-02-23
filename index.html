@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>人名删除工具 · 增强版</title>
+    <title>文本清理工具 · 增强版（行尾添加）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -210,6 +210,51 @@
             border-color: #3b82f6;
             box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
         }
+
+        /* 新增行尾添加样式 */
+        .append-area {
+            margin: 20px 0 16px 0;
+            padding: 16px 20px;
+            background: #f0f9ff;
+            border-radius: 20px;
+            border: 1px solid #b8d6f0;
+        }
+        .append-title {
+            font-weight: 600;
+            color: #0369a1;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .append-control {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 20px;
+        }
+        .append-control label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: #1e293b;
+        }
+        .append-control input[type="text"] {
+            flex: 1 1 300px;
+            padding: 10px 16px;
+            border: 1px solid #7ab7e0;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            background: white;
+        }
+        .append-control input[type="text"]:focus {
+            outline: none;
+            border-color: #0284c7;
+            box-shadow: 0 0 0 2px rgba(2,132,199,0.2);
+        }
+
         .textarea-pair {
             display: flex;
             gap: 16px;
@@ -277,11 +322,12 @@
 <div class="card">
     <h1>
         🧹 文本清理工具
-        <small>删除人名 / Options / ？？？ / ......</small>
+        <small>删除人名 / Options / ？？？ / ...... + 行尾添加</small>
     </h1>
     <div class="description">
         删除单独成行的中文人名（默认1~4字），也可仅删除行首人名保留后文。<br>
-        下方额外规则可以一键删除包含特定模式的行（例如“Options: 1”、“？？？”、“......”）。
+        下方额外规则可以一键删除包含特定模式的行（例如“Options: 1”、“？？？”、“......”）。<br>
+        <strong>新增：</strong>在每行末尾添加自定义文字。
     </div>
 
     <div class="settings-panel">
@@ -313,7 +359,7 @@
         </div>
     </div>
 
-    <!-- 新增额外删除规则区域 -->
+    <!-- 额外删除规则区域 -->
     <div class="extra-rules">
         <div class="extra-title">
             <span>📌 额外整行删除规则（勾选即生效）</span>
@@ -338,6 +384,22 @@
         </div>
         <div class="example-hint">
             ⚡ 自定义正则基于 JavaScript 语法，匹配整行时请包含 ^ 和 $（如 ^Options: \d+$）
+        </div>
+    </div>
+
+    <!-- 新增行尾添加区域 -->
+    <div class="append-area">
+        <div class="append-title">
+            <span>➕ 行尾添加文字</span>
+        </div>
+        <div class="append-control">
+            <label>
+                <input type="checkbox" id="enableAppend"> 启用行尾添加
+            </label>
+            <input type="text" id="appendText" placeholder="输入要添加的文字（例如： —— 摘自剧情）" value="">
+        </div>
+        <div class="example-hint">
+            ✨ 勾选后，处理完毕的每一行末尾都会附加你输入的文字（包括空行）。
         </div>
     </div>
 
@@ -374,7 +436,7 @@ Options: 1[Ave Mujica_哼][Ave Mujica_愉快]
     </div>
 
     <footer>
-        正则匹配汉字 [\u4e00-\u9fa5] · 额外规则仅删除整行（不影响行内） · 自定义正则需自行保证正确性
+        正则匹配汉字 [\u4e00-\u9fa5] · 额外规则仅删除整行 · 行尾添加在清理之后进行
     </footer>
 </div>
 
@@ -396,6 +458,10 @@ Options: 1[Ave Mujica_哼][Ave Mujica_愉快]
         const customRegexInput = document.getElementById('customRegex');
         const enableCustom = document.getElementById('enableCustom');
 
+        // 行尾添加元素
+        const enableAppend = document.getElementById('enableAppend');
+        const appendText = document.getElementById('appendText');
+
         // 构建人名删除正则
         function buildNameRegex(mode, min, max) {
             const charRange = '[\\u4e00-\\u9fa5]';
@@ -412,16 +478,12 @@ Options: 1[Ave Mujica_哼][Ave Mujica_愉快]
             const regexes = [];
             try {
                 if (ruleOptions.checked) {
-                    // 匹配 "Options: 数字" 整行，忽略前后空格，数字至少1位
                     regexes.push(/^\s*Options:\s*\d+\s*$/i);
                 }
                 if (ruleQuestion.checked) {
-                    // 匹配包含"？？？"的行（整行，可能前后有其他内容？但规则说“包含”，所以用contains）
-                    // 为了只删除整行，我们使用包含即可，因为我们是按行过滤
-                    regexes.push(/？？？/); // 只要行内有"？？？"就删除整行
+                    regexes.push(/？？？/);
                 }
                 if (ruleEllipsis.checked) {
-                    // 匹配只包含"......"的行（可以有多个点，前后允许空白）
                     regexes.push(/^\s*\.{2,}\s*$/);
                 }
                 if (enableCustom.checked && customRegexInput.value.trim()) {
@@ -430,7 +492,7 @@ Options: 1[Ave Mujica_哼][Ave Mujica_愉快]
                 }
             } catch (e) {
                 alert('自定义正则格式错误：' + e.message);
-                return []; // 出错时返回空数组，避免干扰
+                return [];
             }
             return regexes;
         }
@@ -455,38 +517,42 @@ Options: 1[Ave Mujica_哼][Ave Mujica_愉快]
             const mode = getSelectedMode();
 
             try {
-                // 第一步：应用人名删除
+                // 1. 应用人名删除
                 const nameRegex = buildNameRegex(mode, min, max);
                 const lines = text.split(/\r?\n/);
                 let afterNameLines;
 
                 if (mode === 'line') {
-                    // 整行删除人名
                     afterNameLines = lines.filter(line => !nameRegex.test(line));
                 } else {
-                    // 行首删除人名
                     afterNameLines = lines.map(line => line.replace(nameRegex, ''));
                 }
 
-                // 第二步：应用额外整行删除规则
+                // 2. 应用额外整行删除规则
                 const extraRegexes = getExtraRegexes();
                 if (extraRegexes.length > 0) {
-                    // 对每一行，检查是否匹配任一额外规则，匹配则删除该行
                     afterNameLines = afterNameLines.filter(line => {
-                        // 如果行内容为空，是否删除？空行通常保留，除非规则匹配空行（可能性小）
-                        // 遍历所有额外正则，只要有一个匹配就删除该行
                         for (let re of extraRegexes) {
                             if (re.test(line)) {
-                                return false; // 删除
+                                return false;
                             }
                         }
-                        return true; // 保留
+                        return true;
                     });
                 }
 
-                const result = afterNameLines.join('\n');
+                // 3. 行尾添加文字（如果启用）
+                let finalLines = afterNameLines;
+                if (enableAppend.checked) {
+                    const suffix = appendText.value;
+                    if (suffix !== undefined && suffix !== null) {
+                        finalLines = afterNameLines.map(line => line + suffix);
+                    }
+                }
+
+                const result = finalLines.join('\n');
                 outputEl.value = result;
-                updateStats(afterNameLines.length);
+                updateStats(finalLines.length);
             } catch (e) {
                 outputEl.value = '❌ 处理出错：' + e.message;
                 updateStats('error');
