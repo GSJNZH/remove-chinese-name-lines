@@ -11,8 +11,8 @@
 
 ## 🖼️ 预览
 
-![screenshot](screenshot.png)  
-*（建议你截一张工具界面图并命名为 screenshot.png 放在仓库中）*
+<img width="3840" height="1958" alt="image" src="https://github.com/user-attachments/assets/3bab8356-c02f-467d-bf23-d11de4a6e0b9" />
+
 
 ## 🚀 使用方法
 
