@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文本清理工具 · 增强版（行尾添加）</title>
+    <title>文本清理工具 · 增强版（行尾添加 + 短句过滤）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -211,7 +211,7 @@
             box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
         }
 
-        /* 新增行尾添加样式 */
+        /* 行尾添加区域 */
         .append-area {
             margin: 20px 0 16px 0;
             padding: 16px 20px;
@@ -322,11 +322,11 @@
 <div class="card">
     <h1>
         🧹 文本清理工具
-        <small>删除人名 / Options / ？？？ / ...... + 行尾添加</small>
+        <small>删除人名 / Options / ？？？ / ...... + 短句过滤 + 行尾添加</small>
     </h1>
     <div class="description">
         删除单独成行的中文人名（默认1~4字），也可仅删除行首人名保留后文。<br>
-        下方额外规则可以一键删除包含特定模式的行（例如“Options: 1”、“？？？”、“......”）。<br>
+        下方额外规则可以一键删除包含特定模式的行（例如“Options: 1”、“？？？”、“......”），以及中文字符数小于5的行。<br>
         <strong>新增：</strong>在每行末尾添加自定义文字。
     </div>
 
@@ -374,6 +374,10 @@
             <label>
                 <input type="checkbox" id="ruleEllipsis" checked> 删除只包含 "......" 的行
             </label>
+            <!-- 新增：删除中文字符数小于5的行 -->
+            <label>
+                <input type="checkbox" id="ruleShortLine"> 删除中文字符数小于5的行
+            </label>
         </div>
         <div class="custom-regex">
             <span style="color:#475569;">✏️ 自定义正则（整行匹配）:</span>
@@ -387,7 +391,7 @@
         </div>
     </div>
 
-    <!-- 新增行尾添加区域 -->
+    <!-- 行尾添加区域 -->
     <div class="append-area">
         <div class="append-title">
             <span>➕ 行尾添加文字</span>
@@ -455,6 +459,7 @@ Options: 1[Ave Mujica_哼][Ave Mujica_愉快]
         const ruleOptions = document.getElementById('ruleOptions');
         const ruleQuestion = document.getElementById('ruleQuestion');
         const ruleEllipsis = document.getElementById('ruleEllipsis');
+        const ruleShortLine = document.getElementById('ruleShortLine'); // 新增
         const customRegexInput = document.getElementById('customRegex');
         const enableCustom = document.getElementById('enableCustom');
 
@@ -528,7 +533,7 @@ Options: 1[Ave Mujica_哼][Ave Mujica_愉快]
                     afterNameLines = lines.map(line => line.replace(nameRegex, ''));
                 }
 
-                // 2. 应用额外整行删除规则
+                // 2. 应用额外整行删除规则（正则匹配）
                 const extraRegexes = getExtraRegexes();
                 if (extraRegexes.length > 0) {
                     afterNameLines = afterNameLines.filter(line => {
@@ -541,7 +546,17 @@ Options: 1[Ave Mujica_哼][Ave Mujica_愉快]
                     });
                 }
 
-                // 3. 行尾添加文字（如果启用）
+                // 3. 新增：删除中文字符数小于5的行
+                if (ruleShortLine.checked) {
+                    afterNameLines = afterNameLines.filter(line => {
+                        // 统计行内中文字符数量
+                        const chineseMatches = line.match(/[\u4e00-\u9fa5]/g);
+                        const count = chineseMatches ? chineseMatches.length : 0;
+                        return count >= 5; // 保留中文字符数 >=5 的行
+                    });
+                }
+
+                // 4. 行尾添加文字（如果启用）
                 let finalLines = afterNameLines;
                 if (enableAppend.checked) {
                     const suffix = appendText.value;
